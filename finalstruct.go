@@ -1,3 +1,4 @@
+// Problem 2 without using locally created package's function
 package main
 
 import (
