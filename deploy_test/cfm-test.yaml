@@ -6,7 +6,6 @@ Parameters:
   BucketName:
     Type: String
     Description: The name of the S3 bucket to create (must be globally unique).
-
   VersioningStatus:
     Type: String
     Default: Suspended
@@ -14,6 +13,14 @@ Parameters:
       - Enabled
       - Suspended
     Description: Enable or suspend versioning for the bucket.
+  ExpiryPrefix:
+    Type: String
+    Default: test/
+    Description: The prefix (folder) where objects will expire.
+  ExpiryDays:
+    Type: Number
+    Default: 1
+    Description: Number of days after which objects under the prefix should expire.
 
 Resources:
   S3Bucket:
@@ -22,6 +29,12 @@ Resources:
       BucketName: !Ref BucketName
       VersioningConfiguration:
         Status: !Ref VersioningStatus
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireObjectsUnderPrefix
+            Prefix: !Ref ExpiryPrefix
+            Status: Enabled
+            ExpirationInDays: !Ref ExpiryDays
 
 Outputs:
   BucketNameOutput:
