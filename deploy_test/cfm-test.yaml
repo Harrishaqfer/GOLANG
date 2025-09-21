@@ -93,3 +93,82 @@ ResourceTemplates:
       Type: AWS::ECR::Repository
       Properties:
         RepositoryName: ${repositoryName}
+
+  TemplateD:
+    ${repositoryLogicalName}:
+      Type: AWS::ECR::Repository
+      Properties:
+        RepositoryName: ${repositoryName}
+        LifecyclePolicy:
+          LifecyclePolicyText: |
+            {
+              "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only latest ${imageCount} images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": ${imageCount}
+                },
+                "action": { "type": "expire" }
+              }]
+            }
+        RepositoryPolicyText: |
+          {
+            "Version": "2008-10-17",
+            "Statement": [
+              {
+                "Sid": "AllowPull",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": "${whiteListingAcc}"
+                },
+                "Action": [
+                  "ecr:GetDownloadUrlForLayer",
+                  "ecr:BatchGetImage",
+                  "ecr:BatchCheckLayerAvailability"
+                ]
+              }
+            ]
+          }
+
+  TemplateE:
+    ${repositoryLogicalName}:
+      Type: AWS::ECR::Repository
+      Properties:
+        RepositoryName: ${repositoryName}
+        LifecyclePolicy:
+          LifecyclePolicyText: |   
+            {
+              "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire images older than ${expiryInDays} days",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": ${expiryInDays}
+                },
+                "action": { "type": "expire" }
+              }]
+            }  
+        RepositoryPolicyText: |
+          {
+            "Version": "2008-10-17",
+            "Statement": [
+              {
+                "Sid": "AllowPull",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": "${whiteListingAcc}"
+                },
+                "Action": [
+                  "ecr:GetDownloadUrlForLayer",
+                  "ecr:BatchGetImage",
+                  "ecr:BatchCheckLayerAvailability"
+                ]
+              }
+            ]
+          } 
