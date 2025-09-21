@@ -1,7 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Simple CloudFormation template to create an S3 bucket with parameters.
-
+Description: Elastic Container Registry
 Parameters:
   BucketName:
     Type: String
@@ -26,21 +25,71 @@ Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref BucketName
+      BucketName: {"Ref": "BucketName"}
       VersioningConfiguration:
-        Status: !Ref VersioningStatus
+        Status: {"Ref": "VersioningStatus"}
       LifecycleConfiguration:
         Rules:
           - Id: ExpireObjectsUnderPrefix
-            Prefix: !Ref ExpiryPrefix
+            Prefix: {"Ref": "ExpiryPrefix"}
             Status: Enabled
-            ExpirationInDays: !Ref ExpiryDays
+            ExpirationInDays: {"Ref": "ExpiryDays"}
 
 Outputs:
-  BucketNameOutput:
-    Description: Name of the S3 bucket
-    Value: !Ref S3Bucket
-
   BucketArnOutput:
     Description: ARN of the S3 bucket
-    Value: !GetAtt S3Bucket.Arn
+    Value: {"Fn::GetAtt": ["S3Bucket","Arn"]} 
+  BucketNameOutput:
+    Description: Name of the S3 bucket
+    Value: {"Ref": "S3Bucket"}
+
+
+ResourceTemplates:
+  TemplateA:
+    ${repositoryLogicalName}:
+      Type: AWS::ECR::Repository
+      Properties:
+        RepositoryName: ${repositoryName}
+        LifecyclePolicy:
+          LifecyclePolicyText: |
+            {
+              "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only latest ${imageCount} images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": ${imageCount}
+                },
+                "action": { "type": "expire" }
+              }]
+            }
+
+  TemplateB:
+    ${repositoryLogicalName}:
+      Type: AWS::ECR::Repository
+      Properties:
+        RepositoryName: ${repositoryName}
+        LifecyclePolicy:
+          LifecyclePolicyText: |   
+            {
+              "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire images older than ${expiryInDays} days",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": ${expiryInDays}
+                },
+                "action": { "type": "expire" }
+              }]
+            }   
+
+  TemplateC:
+    ${repositoryLogicalName}:
+      Type: AWS::ECR::Repository
+      Properties:
+        RepositoryName: ${repositoryName}
